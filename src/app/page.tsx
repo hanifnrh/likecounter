@@ -1,101 +1,111 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState } from 'react';
+
+interface Follower {
+  full_name: string;
+  id: string;
+  is_private: boolean;
+  is_verified: boolean;
+  latest_story_ts: number;
+  profile_pic_url: string;
+  username: string;
+}
+
+interface Like {
+  username: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [postUrl, setPostUrl] = useState<string>('');
+  const [followers, setFollowers] = useState<Follower[]>([]);
+  const [likes, setLikes] = useState<Like[]>([]);
+  const [filteredLikesCount, setFilteredLikesCount] = useState<number>(0);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPostUrl(e.target.value);
+  };
+
+  const fetchFollowers = async () => {
+    try {
+      const response = await fetch('https://instagram-scraper-api2.p.rapidapi.com/v1/followers?username_or_id_or_url=gas.solution.official&amount=1000', {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-key': '23380cf958mshacfe5b08a78621ap1efa9ejsnf3a75df334e7',
+          'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com'
+        }
+      });
+      const result = await response.json();
+      console.log('Followers API response:', result);
+      return result.data.items || [];
+    } catch (error) {
+      console.error('Error fetching followers:', error);
+      return [];
+    }
+  };
+
+  const fetchLikes = async (url: string) => {
+    try {
+      const response = await fetch(`https://instagram-scraper-api2.p.rapidapi.com/v1/likes?code_or_id_or_url=${url}`, {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-key': '23380cf958mshacfe5b08a78621ap1efa9ejsnf3a75df334e7',
+          'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com'
+        }
+      });
+      const result = await response.json();
+      console.log('Likes API response:', result);
+      return result.data.items || [];
+    } catch (error) {
+      console.error('Error fetching likes:', error);
+      return [];
+    }
+  };
+
+  const handleSubmit = async () => {
+    setFilteredLikesCount(0); // Reset count before fetching
+    const [fetchedFollowers, fetchedLikes] = await Promise.all([
+      fetchFollowers(),
+      fetchLikes(postUrl)
+    ]);
+    console.log('Fetched Followers:', fetchedFollowers); // Check fetched followers
+    console.log('Fetched Likes:', fetchedLikes); // Check fetched likes
+    setFollowers(fetchedFollowers);
+    setLikes(fetchedLikes);
+  };
+
+  useEffect(() => {
+    if (followers.length > 0 && likes.length > 0) {
+      console.log('Followers:', followers); // Log followers data
+      console.log('Likes:', likes); // Log likes data
+
+      const followerUsernames = followers.map(follower => follower.username);
+      const filtered = likes.filter(like => followerUsernames.includes(like.username));
+
+      console.log('Filtered Likes:', filtered); // Log the filtered likes
+
+      setFilteredLikesCount(filtered.length); // Count the filtered likes
+    }
+  }, [followers, likes]);
+
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-bold mb-4">Instagram Like Filter</h1>
+      <input
+        type="text"
+        value={postUrl}
+        onChange={handleInputChange}
+        placeholder="Enter Instagram Post URL"
+        className="border p-2 mb-4 w-full"
+      />
+      <button
+        onClick={handleSubmit}
+        className="bg-blue-500 text-white px-4 py-2 rounded"
+      >
+        Filter Likes
+      </button>
+      <h2 className="text-lg font-semibold mt-6">Filtered Likes from Followers</h2>
+      <p className="font-semibold">Total: {filteredLikesCount}</p>
     </div>
   );
 }
